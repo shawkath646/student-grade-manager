@@ -1,0 +1,13 @@
+[
+  {
+    "student_id": "5161655",
+    "name": "jndiqnd",
+    "marks_by_subject": {
+      "English": 35.0,
+      "Math": 26.0,
+      "Science": 51.0,
+      "History": 45.0,
+      "ICT": 66.0
+    }
+  }
+]
