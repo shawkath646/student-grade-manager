@@ -1,8 +1,6 @@
 from __future__ import annotations
-
 from dataclasses import dataclass, field
-from typing import Dict, List
-
+from typing import Dict
 
 @dataclass
 class Student:
@@ -30,11 +28,5 @@ class Student:
         return Student(
             student_id=str(data.get("student_id", "")),
             name=str(data.get("name", "")),
-            marks_by_subject={
-                str(k): float(v) for k, v in dict(data.get("marks_by_subject", {})).items()
-            },
+            marks_by_subject={str(k): float(v) for k, v in dict(data.get("marks_by_subject", {})).items()},
         )
-
-
-
-

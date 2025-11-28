@@ -5,7 +5,8 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Dict, List
 import csv
 import json
-import os
+import sys
+import ctypes
 
 from . import DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS
 from .grading import compute_grade, validate_marks, validate_student_id, validate_student_name, validate_float_input
@@ -14,36 +15,50 @@ from .models import Student
 from .storage import load_students, save_students, DEFAULT_DATA_PATH
 
 
+if sys.platform == 'win32':
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
 class StatisticsWindow(tk.Toplevel):
-    """Window to display detailed statistics."""
     
     def __init__(self, parent: tk.Tk, manager: StudentManager) -> None:
         super().__init__(parent)
         self.title("Class Statistics")
-        self.geometry("600x500")
+        self.geometry("700x600")
+        self.configure(bg='#f0f0f0')
         
         stats = manager.statistics()
         
-        # Create scrollable text area
-        frame = ttk.Frame(self)
-        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        header = tk.Frame(self, bg='#2c3e50', height=50)
+        header.pack(fill=tk.X)
+        tk.Label(header, text="📊 Class Statistics", font=('Segoe UI', 16, 'bold'), 
+                bg='#2c3e50', fg='white', pady=12).pack()
         
-        text_area = tk.Text(frame, wrap=tk.WORD, font=("Consolas", 10))
+        frame = ttk.Frame(self, padding=15)
+        frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
+        
+        text_area = tk.Text(frame, wrap=tk.WORD, font=("Consolas", 11), bg='#ffffff', 
+                           relief=tk.FLAT, borderwidth=0, padx=10, pady=10)
         scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=text_area.yview)
         text_area.configure(yscrollcommand=scrollbar.set)
         
         text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Format statistics
         content = self._format_statistics(stats)
         text_area.insert(tk.END, content)
         text_area.config(state=tk.DISABLED)
         
-        ttk.Button(self, text="Close", command=self.destroy).pack(pady=5)
+        btn_frame = ttk.Frame(self)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text="✖️ Close", command=self.destroy, style='Action.TButton').pack()
     
     def _format_statistics(self, stats: Dict[str, object]) -> str:
-        """Format statistics for display."""
         lines = []
         lines.append("=" * 60)
         lines.append("CLASS STATISTICS")
@@ -87,29 +102,38 @@ class GradeApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Student Grade Management System")
-        self.geometry("1100x750")
+        self.geometry("1200x800")
+        self.configure(bg='#f0f0f0')
+        
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure('TFrame', background='#f0f0f0')
+        style.configure('TLabel', background='#f0f0f0', font=('Segoe UI', 10))
+        style.configure('TLabelframe', background='#f0f0f0', font=('Segoe UI', 10, 'bold'))
+        style.configure('TLabelframe.Label', background='#f0f0f0', foreground='#2c3e50', font=('Segoe UI', 11, 'bold'))
+        style.configure('TButton', font=('Segoe UI', 9), padding=6)
+        style.configure('TEntry', fieldbackground='white', font=('Segoe UI', 10))
+        style.configure('Treeview', font=('Segoe UI', 9), rowheight=25)
+        style.configure('Treeview.Heading', font=('Segoe UI', 10, 'bold'), background='#34495e', foreground='white')
+        style.map('Treeview.Heading', background=[('active', '#2c3e50')])
+        
+        style.configure('Action.TButton', font=('Segoe UI', 9, 'bold'), padding=8)
+        style.map('Action.TButton', background=[('active', '#3498db')], foreground=[('active', 'white')])
 
         self.manager = StudentManager(load_students())
-
         self._build_widgets()
         self._refresh_table()
-        
-        # Bind save on close
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
-        
-        # Configure tag colors for styling
         self._setup_table_tags()
 
     def _setup_table_tags(self) -> None:
-        """Configure color tags for the table based on grades."""
-        self.tree.tag_configure("grade_A", background="#90EE90")  # Light green
-        self.tree.tag_configure("grade_B", background="#87CEEB")  # Sky blue
-        self.tree.tag_configure("grade_C", background="#FFD700")  # Gold
-        self.tree.tag_configure("grade_D", background="#FFA500")  # Orange
-        self.tree.tag_configure("grade_F", background="#FFB6C1")  # Light pink
+        self.tree.tag_configure("grade_A", background="#d4edda", foreground="#155724")
+        self.tree.tag_configure("grade_B", background="#d1ecf1", foreground="#0c5460")
+        self.tree.tag_configure("grade_C", background="#fff3cd", foreground="#856404")
+        self.tree.tag_configure("grade_D", background="#f8d7da", foreground="#721c24")
+        self.tree.tag_configure("grade_F", background="#f5c6cb", foreground="#721c24")
 
     def _on_closing(self) -> None:
-        """Handle window closing - save data automatically."""
         try:
             save_students(self.manager.list_students())
         except Exception as e:
@@ -117,94 +141,108 @@ class GradeApp(tk.Tk):
         self.destroy()
 
     def _build_widgets(self) -> None:
-        # Menu bar
-        menubar = tk.Menu(self)
+        menubar = tk.Menu(self, bg='#34495e', fg='white', font=('Segoe UI', 9))
         self.config(menu=menubar)
         
-        file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Save", command=self._on_save)
-        file_menu.add_command(label="Reload", command=self._on_reload)
+        file_menu = tk.Menu(menubar, tearoff=0, font=('Segoe UI', 9))
+        menubar.add_cascade(label="📁 File", menu=file_menu)
+        file_menu.add_command(label="💾 Save", command=self._on_save)
+        file_menu.add_command(label="🔄 Reload", command=self._on_reload)
         file_menu.add_separator()
-        file_menu.add_command(label="Import JSON", command=self._on_import_json)
-        file_menu.add_command(label="Import CSV", command=self._on_import_csv)
+        file_menu.add_command(label="📥 Import JSON", command=self._on_import_json)
+        file_menu.add_command(label="📥 Import CSV", command=self._on_import_csv)
         file_menu.add_separator()
-        file_menu.add_command(label="Export to CSV", command=self._on_export_csv)
+        file_menu.add_command(label="📤 Export to CSV", command=self._on_export_csv)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self._on_closing)
+        file_menu.add_command(label="❌ Exit", command=self._on_closing)
         
-        tools_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Statistics", command=self._show_statistics)
+        tools_menu = tk.Menu(menubar, tearoff=0, font=('Segoe UI', 9))
+        menubar.add_cascade(label="🛠️ Tools", menu=tools_menu)
+        tools_menu.add_command(label="📊 Statistics", command=self._show_statistics)
         
-        form = ttk.LabelFrame(self, text="Student Details")
-        form.pack(fill=tk.X, padx=10, pady=10)
+        header = tk.Frame(self, bg='#2c3e50', height=60)
+        header.pack(fill=tk.X, padx=0, pady=0)
+        title_label = tk.Label(header, text="🎓 Student Grade Management", font=('Segoe UI', 18, 'bold'), 
+                               bg='#2c3e50', fg='white', pady=15)
+        title_label.pack()
+        
+        form = ttk.LabelFrame(self, text="  📝 Student Information  ", padding=15)
+        form.pack(fill=tk.X, padx=15, pady=15)
 
         self.var_id = tk.StringVar()
         self.var_name = tk.StringVar()
         self.subject_vars: Dict[str, tk.StringVar] = {subj: tk.StringVar() for subj in DEFAULT_SUBJECTS}
 
-        ttk.Label(form, text="ID").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        entry_id = ttk.Entry(form, textvariable=self.var_id, width=20)
-        entry_id.grid(row=0, column=1, padx=5, pady=5)
+        ttk.Label(form, text="Student ID:", font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, padx=8, pady=8, sticky=tk.W)
+        entry_id = ttk.Entry(form, textvariable=self.var_id, width=22, font=('Segoe UI', 10))
+        entry_id.grid(row=0, column=1, padx=8, pady=8)
         entry_id.bind('<Return>', lambda e: self._on_add_update())
 
-        ttk.Label(form, text="Name").grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
-        entry_name = ttk.Entry(form, textvariable=self.var_name, width=30)
-        entry_name.grid(row=0, column=3, padx=5, pady=5)
+        ttk.Label(form, text="Name:", font=('Segoe UI', 10, 'bold')).grid(row=0, column=2, padx=8, pady=8, sticky=tk.W)
+        entry_name = ttk.Entry(form, textvariable=self.var_name, width=35, font=('Segoe UI', 10))
+        entry_name.grid(row=0, column=3, padx=8, pady=8)
         entry_name.bind('<Return>', lambda e: self._focus_next())
 
         row = 1
         for i, subj in enumerate(DEFAULT_SUBJECTS):
-            ttk.Label(form, text=subj).grid(row=row, column=0 + (i % 2) * 2, padx=5, pady=5, sticky=tk.W)
-            entry_subj = ttk.Entry(form, textvariable=self.subject_vars[subj], width=10)
-            entry_subj.grid(row=row, column=1 + (i % 2) * 2, padx=5, pady=5)
+            ttk.Label(form, text=f"{subj}:", font=('Segoe UI', 10)).grid(row=row, column=0 + (i % 2) * 2, padx=8, pady=8, sticky=tk.W)
+            entry_subj = ttk.Entry(form, textvariable=self.subject_vars[subj], width=12, font=('Segoe UI', 10))
+            entry_subj.grid(row=row, column=1 + (i % 2) * 2, padx=8, pady=8)
             if i % 2 == 1:
                 row += 1
 
-        btns = ttk.Frame(self)
-        btns.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btns, text="Add/Update", command=self._on_add_update).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btns, text="Delete", command=self._on_delete).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btns, text="Clear Form", command=self._clear_form).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btns, text="Save", command=self._on_save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btns, text="Statistics", command=self._show_statistics).pack(side=tk.LEFT, padx=5)
+        btn_frame = ttk.Frame(self)
+        btn_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+        
+        btn_add = ttk.Button(btn_frame, text="➕ Add/Update", command=self._on_add_update, style='Action.TButton')
+        btn_add.pack(side=tk.LEFT, padx=5)
+        
+        btn_delete = ttk.Button(btn_frame, text="🗑️ Delete", command=self._on_delete)
+        btn_delete.pack(side=tk.LEFT, padx=5)
+        
+        btn_clear = ttk.Button(btn_frame, text="🔄 Clear Form", command=self._clear_form)
+        btn_clear.pack(side=tk.LEFT, padx=5)
+        
+        btn_save = ttk.Button(btn_frame, text="💾 Save", command=self._on_save)
+        btn_save.pack(side=tk.LEFT, padx=5)
+        
+        btn_stats = ttk.Button(btn_frame, text="📊 Statistics", command=self._show_statistics)
+        btn_stats.pack(side=tk.LEFT, padx=5)
 
-        search_frame = ttk.Frame(self)
-        search_frame.pack(fill=tk.X, padx=10, pady=5)
+        search_frame = ttk.LabelFrame(self, text="  🔍 Search & Filter  ", padding=10)
+        search_frame.pack(fill=tk.X, padx=15, pady=10)
+        
         self.var_search = tk.StringVar()
-        search_entry = ttk.Entry(search_frame, textvariable=self.var_search, width=30)
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=5)
+        search_entry = ttk.Entry(search_frame, textvariable=self.var_search, width=30, font=('Segoe UI', 10))
         search_entry.pack(side=tk.LEFT, padx=5)
         search_entry.bind('<Return>', lambda e: self._on_search())
-        ttk.Button(search_frame, text="Search", command=self._on_search).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Clear", command=self._on_clear_search).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(search_frame, text="🔍 Search", command=self._on_search).pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text="✖️ Clear", command=self._on_clear_search).pack(side=tk.LEFT, padx=5)
         
         ttk.Label(search_frame, text="Sort by:").pack(side=tk.LEFT, padx=(20, 5))
         self.var_sort = tk.StringVar(value="Name")
         sort_combo = ttk.Combobox(search_frame, textvariable=self.var_sort, 
                                   values=["Name", "ID", "Average", "Total"], 
-                                  state="readonly", width=12)
+                                  state="readonly", width=12, font=('Segoe UI', 10))
         sort_combo.pack(side=tk.LEFT, padx=5)
         sort_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_table())
 
-        # Create frame for treeview and scrollbars
-        tree_frame = ttk.Frame(self)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        tree_frame = ttk.LabelFrame(self, text="  📋 Student Records  ", padding=10)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         
         columns = ("ID", "Name", "Total", "Average", "Grade", *DEFAULT_SUBJECTS)
-        self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=15)
+        self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings")
         
-        # Configure headings
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100 if col not in ("Name",) else 150)
+            self.tree.column(col, width=100 if col not in ("Name",) else 180)
         
-        # Add scrollbars
         scrollbar_y = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         scrollbar_x = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL, command=self.tree.xview)
         self.tree.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
         
-        # Pack treeview and scrollbars
         self.tree.grid(row=0, column=0, sticky="nsew")
         scrollbar_y.grid(row=0, column=1, sticky="ns")
         scrollbar_x.grid(row=1, column=0, sticky="ew")
@@ -214,14 +252,20 @@ class GradeApp(tk.Tk):
         
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
 
-        stats = ttk.Frame(self)
-        stats.pack(fill=tk.X, padx=10, pady=5)
-        self.lbl_class_avg = ttk.Label(stats, text="Class Average: 0.00", font=("Arial", 9, "bold"))
-        self.lbl_class_avg.pack(side=tk.LEFT, padx=5)
-        self.lbl_top = ttk.Label(stats, text="Top Performers: -", font=("Arial", 9))
-        self.lbl_top.pack(side=tk.LEFT, padx=15)
-        self.lbl_total = ttk.Label(stats, text=f"Total Students: {self.manager.count_students()}", font=("Arial", 9))
-        self.lbl_total.pack(side=tk.LEFT, padx=15)
+        stats_frame = tk.Frame(self, bg='#ecf0f1', relief=tk.RAISED, bd=1)
+        stats_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        
+        self.lbl_total = tk.Label(stats_frame, text=f"👥 Total Students: {self.manager.count_students()}", 
+                                  font=("Segoe UI", 10, "bold"), bg='#ecf0f1', fg='#2c3e50')
+        self.lbl_total.pack(side=tk.LEFT, padx=15, pady=10)
+        
+        self.lbl_class_avg = tk.Label(stats_frame, text="📈 Class Average: 0.00%", 
+                                      font=("Segoe UI", 10, "bold"), bg='#ecf0f1', fg='#27ae60')
+        self.lbl_class_avg.pack(side=tk.LEFT, padx=15, pady=10)
+        
+        self.lbl_top = tk.Label(stats_frame, text="🏆 Top Performers: -", 
+                               font=("Segoe UI", 10), bg='#ecf0f1', fg='#34495e')
+        self.lbl_top.pack(side=tk.LEFT, padx=15, pady=10)
 
     def _focus_next(self) -> None:
         """Focus next field."""
@@ -232,15 +276,12 @@ class GradeApp(tk.Tk):
     def _collect_student_from_form(self) -> Student:
         """Collect and validate student data from form."""
         try:
-            # Validate ID
             sid = self.var_id.get().strip()
             validate_student_id(sid)
             
-            # Validate name
             name = self.var_name.get().strip()
             validate_student_name(name)
             
-            # Validate and collect marks
             marks = {}
             for subj, var in self.subject_vars.items():
                 txt = var.get().strip()
@@ -261,16 +302,22 @@ class GradeApp(tk.Tk):
             raise ValueError(f"Validation error: {str(e)}")
 
     def _on_add_update(self) -> None:
-        """Handle add/update button click."""
         try:
             student = self._collect_student_from_form()
+            existing = self.manager.get(student.student_id)
             self.manager.add_or_update(student)
             self._refresh_table()
-            # Auto-save
             try:
                 save_students(self.manager.list_students())
             except Exception:
-                pass  # Don't show error for auto-save
+                pass
+            
+            if existing:
+                messagebox.showinfo("✅ Success", f"Student '{student.name}' updated successfully!")
+            else:
+                messagebox.showinfo("✅ Success", f"Student '{student.name}' added successfully!")
+            
+            self._clear_form()
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -567,10 +614,9 @@ class GradeApp(tk.Tk):
             self.tree.set(item, "Grade", grade)
 
     def _update_stats(self) -> None:
-        """Update statistics labels."""
         avg = self.manager.class_average()
-        self.lbl_class_avg.config(text=f"Class Average: {avg:.2f}")
+        self.lbl_class_avg.config(text=f"📈 Class Average: {avg:.2f}%")
         top = self.manager.top_performers(3)
-        top_txt = ", ".join(f"{s.name} ({s.average():.1f})" for s in top) if top else "-"
-        self.lbl_top.config(text=f"Top Performers: {top_txt}")
-        self.lbl_total.config(text=f"Total Students: {self.manager.count_students()}")
+        top_txt = ", ".join(f"{s.name} ({s.average():.1f}%)" for s in top) if top else "-"
+        self.lbl_top.config(text=f"🏆 Top Performers: {top_txt}")
+        self.lbl_total.config(text=f"👥 Total Students: {self.manager.count_students()}")

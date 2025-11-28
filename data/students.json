@@ -9,5 +9,115 @@
       "History": 45.0,
       "ICT": 66.0
     }
+  },
+  {
+    "student_id": "S001",
+    "name": "Alice Johnson",
+    "marks_by_subject": {
+      "English": 85.0,
+      "Math": 92.0,
+      "Science": 78.0,
+      "History": 88.0,
+      "ICT": 90.0
+    }
+  },
+  {
+    "student_id": "S002",
+    "name": "Bob Smith",
+    "marks_by_subject": {
+      "English": 70.0,
+      "Math": 65.0,
+      "Science": 72.0,
+      "History": 60.0,
+      "ICT": 68.0
+    }
+  },
+  {
+    "student_id": "S003",
+    "name": "Carol Davis",
+    "marks_by_subject": {
+      "English": 95.0,
+      "Math": 88.0,
+      "Science": 92.0,
+      "History": 85.0,
+      "ICT": 93.0
+    }
+  },
+  {
+    "student_id": "S004",
+    "name": "David Brown",
+    "marks_by_subject": {
+      "English": 55.0,
+      "Math": 60.0,
+      "Science": 58.0,
+      "History": 62.0,
+      "ICT": 60.0
+    }
+  },
+  {
+    "student_id": "S005",
+    "name": "Emma Wilson",
+    "marks_by_subject": {
+      "English": 88.0,
+      "Math": 85.0,
+      "Science": 90.0,
+      "History": 92.0,
+      "ICT": 87.0
+    }
+  },
+  {
+    "student_id": "S006",
+    "name": "Frank Martinez",
+    "marks_by_subject": {
+      "English": 78.0,
+      "Math": 82.0,
+      "Science": 75.0,
+      "History": 80.0,
+      "ICT": 85.0
+    }
+  },
+  {
+    "student_id": "S007",
+    "name": "Grace Lee",
+    "marks_by_subject": {
+      "English": 92.0,
+      "Math": 95.0,
+      "Science": 88.0,
+      "History": 90.0,
+      "ICT": 94.0
+    }
+  },
+  {
+    "student_id": "S008",
+    "name": "Henry Taylor",
+    "marks_by_subject": {
+      "English": 65.0,
+      "Math": 70.0,
+      "Science": 68.0,
+      "History": 72.0,
+      "ICT": 75.0
+    }
+  },
+  {
+    "student_id": "S009",
+    "name": "Ivy Anderson",
+    "marks_by_subject": {
+      "English": 80.0,
+      "Math": 78.0,
+      "Science": 85.0,
+      "History": 82.0,
+      "ICT": 88.0
+    }
+  },
+  {
+    "student_id": "S010",
+    "name": "Jack Robinson",
+    "marks_by_subject": {
+      "English": 72.0,
+      "Math": 68.0,
+      "Science": 70.0,
+      "History": 75.0,
+      "ICT": 72.0
+    }
   }
 ]
