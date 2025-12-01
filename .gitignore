@@ -127,4 +127,11 @@ config.ini
 *.tmp
 *.bak
 *.backup
+
+# Office temporary files
+~$*.pptx
+~$*.docx
+~$*.xlsx
 *.pptx
+*.docx
+*.xlsx
