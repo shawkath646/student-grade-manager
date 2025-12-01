@@ -1,0 +1,5 @@
+# Database
+mysql-connector-python>=8.0.0
+
+# Image Processing
+Pillow>=10.0.0

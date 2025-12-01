@@ -12,7 +12,8 @@ from . import DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS
 from .grading import compute_grade, validate_marks, validate_student_id, validate_student_name, validate_float_input
 from .manager import StudentManager
 from .models import Student
-from .storage import load_students, save_students, DEFAULT_DATA_PATH
+from .storage import load_students, save_students
+from .windows import StatisticsWindow, ProfileWindow
 
 
 if sys.platform == 'win32':
@@ -23,79 +24,6 @@ if sys.platform == 'win32':
             ctypes.windll.user32.SetProcessDPIAware()
         except Exception:
             pass
-
-class StatisticsWindow(tk.Toplevel):
-    
-    def __init__(self, parent: tk.Tk, manager: StudentManager) -> None:
-        super().__init__(parent)
-        self.title("Class Statistics")
-        self.geometry("700x600")
-        self.configure(bg='#f0f0f0')
-        
-        stats = manager.statistics()
-        
-        header = tk.Frame(self, bg='#2c3e50', height=50)
-        header.pack(fill=tk.X)
-        tk.Label(header, text="📊 Class Statistics", font=('Segoe UI', 16, 'bold'), 
-                bg='#2c3e50', fg='white', pady=12).pack()
-        
-        frame = ttk.Frame(self, padding=15)
-        frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
-        
-        text_area = tk.Text(frame, wrap=tk.WORD, font=("Consolas", 11), bg='#ffffff', 
-                           relief=tk.FLAT, borderwidth=0, padx=10, pady=10)
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=text_area.yview)
-        text_area.configure(yscrollcommand=scrollbar.set)
-        
-        text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        content = self._format_statistics(stats)
-        text_area.insert(tk.END, content)
-        text_area.config(state=tk.DISABLED)
-        
-        btn_frame = ttk.Frame(self)
-        btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="✖️ Close", command=self.destroy, style='Action.TButton').pack()
-    
-    def _format_statistics(self, stats: Dict[str, object]) -> str:
-        lines = []
-        lines.append("=" * 60)
-        lines.append("CLASS STATISTICS")
-        lines.append("=" * 60)
-        lines.append("")
-        
-        lines.append(f"Total Students: {stats['total_students']}")
-        lines.append(f"Class Average: {stats['class_average']:.2f}%")
-        lines.append(f"Pass Rate: {stats['pass_rate']:.1f}%")
-        lines.append("")
-        
-        lines.append("Students by Grade:")
-        grade_counts = stats.get('students_by_grade', {})
-        for grade in sorted(grade_counts.keys(), reverse=True):
-            count = grade_counts[grade]
-            lines.append(f"  Grade {grade}: {count} student(s)")
-        lines.append("")
-        
-        lines.append("Subject Averages:")
-        subject_avgs = stats.get('subject_averages', {})
-        for subject, avg in sorted(subject_avgs.items()):
-            lines.append(f"  {subject}: {avg:.2f}%")
-        lines.append("")
-        
-        lines.append("Top 3 Performers:")
-        for i, (name, avg) in enumerate(stats.get('top_performers', []), 1):
-            lines.append(f"  {i}. {name}: {avg:.2f}%")
-        lines.append("")
-        
-        lines.append("Bottom 3 Performers:")
-        for i, (name, avg) in enumerate(stats.get('bottom_performers', []), 1):
-            lines.append(f"  {i}. {name}: {avg:.2f}%")
-        lines.append("")
-        
-        lines.append("=" * 60)
-        
-        return "\n".join(lines)
 
 
 class GradeApp(tk.Tk):
@@ -121,6 +49,7 @@ class GradeApp(tk.Tk):
         style.map('Action.TButton', background=[('active', '#3498db')], foreground=[('active', 'white')])
 
         self.manager = StudentManager(load_students())
+        self.profile_window = None
         self._build_widgets()
         self._refresh_table()
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
@@ -232,25 +161,34 @@ class GradeApp(tk.Tk):
         tree_frame = ttk.LabelFrame(self, text="  📋 Student Records  ", padding=10)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         
-        columns = ("ID", "Name", "Total", "Average", "Grade", *DEFAULT_SUBJECTS)
+        columns = ("ID", "Name", "Profile", "Total", "Average", "Grade", *DEFAULT_SUBJECTS)
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings")
         
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100 if col not in ("Name",) else 180)
+            if col == "Profile":
+                self.tree.column(col, width=100, anchor=tk.CENTER)
+            elif col == "Name":
+                self.tree.column(col, width=180)
+            else:
+                self.tree.column(col, width=100)
         
-        scrollbar_y = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
-        scrollbar_x = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL, command=self.tree.xview)
-        self.tree.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+        self.scrollbar_y = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        self.scrollbar_x = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL, command=self.tree.xview)
+        self.tree.configure(yscrollcommand=self._on_y_scroll, xscrollcommand=self._on_x_scroll)
         
         self.tree.grid(row=0, column=0, sticky="nsew")
-        scrollbar_y.grid(row=0, column=1, sticky="ns")
-        scrollbar_x.grid(row=1, column=0, sticky="ew")
+        self.scrollbar_y.grid(row=0, column=1, sticky="ns")
+        self.scrollbar_x.grid(row=1, column=0, sticky="ew")
         
         tree_frame.grid_rowconfigure(0, weight=1)
         tree_frame.grid_columnconfigure(0, weight=1)
         
+        self.scrollbar_y.grid_remove()
+        self.scrollbar_x.grid_remove()
+        
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
+        self.tree.bind("<Button-1>", self._on_tree_click)
 
         stats_frame = tk.Frame(self, bg='#ecf0f1', relief=tk.RAISED, bd=1)
         stats_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
@@ -549,6 +487,34 @@ class GradeApp(tk.Tk):
             messagebox.showinfo("Info", "No students to display statistics.")
             return
         StatisticsWindow(self, self.manager)
+    
+    def _show_profile(self, student_id: str) -> None:
+        """Show student profile window."""
+        from .db import get_profile
+        
+        if self.profile_window and self.profile_window.winfo_exists():
+            self.profile_window.lift()
+            messagebox.showinfo("Info", "A profile window is already open. Please close it first.")
+            return
+        
+        student = self.manager.get(student_id)
+        if not student:
+            messagebox.showerror("Error", f"Student {student_id} not found.")
+            return
+        
+        profile_data = get_profile(student_id)
+        if not profile_data:
+            messagebox.showwarning("No Profile", f"No profile data found for {student.name}.")
+            return
+        
+        self.profile_window = ProfileWindow(self, student_id, student.name, profile_data)
+        self.profile_window.protocol("WM_DELETE_WINDOW", self._on_profile_close)
+    
+    def _on_profile_close(self) -> None:
+        """Handle profile window close."""
+        if self.profile_window:
+            self.profile_window.destroy()
+            self.profile_window = None
 
     def _on_select(self, _event=None) -> None:
         """Handle table row selection."""
@@ -558,7 +524,7 @@ class GradeApp(tk.Tk):
         values = self.tree.item(sel[0], "values")
         if not values:
             return
-        # values: ID, Name, Total, Average, Grade, subjects...
+        # values: ID, Name, Profile, Total, Average, Grade, subjects...
         sid = values[0]
         student = self.manager.get(sid)
         if not student:
@@ -567,6 +533,43 @@ class GradeApp(tk.Tk):
         self.var_name.set(student.name)
         for subj in DEFAULT_SUBJECTS:
             self.subject_vars[subj].set(str(student.marks_by_subject.get(subj, 0)))
+    
+    def _on_tree_click(self, event) -> None:
+        """Handle click on tree to show profile."""
+        region = self.tree.identify_region(event.x, event.y)
+        if region != "cell":
+            return
+        
+        column = self.tree.identify_column(event.x)
+        item = self.tree.identify_row(event.y)
+        
+        if not item:
+            return
+        
+        # Column #3 is the Profile column (ID=0, Name=1, Profile=2)
+        if column == "#3":
+            values = self.tree.item(item, "values")
+            if values:
+                student_id = values[0]
+                self._show_profile(student_id)
+    
+    def _on_y_scroll(self, first, last):
+        """Auto-hide/show vertical scrollbar."""
+        first, last = float(first), float(last)
+        if first <= 0.0 and last >= 1.0:
+            self.scrollbar_y.grid_remove()
+        else:
+            self.scrollbar_y.grid()
+        self.scrollbar_y.set(first, last)
+    
+    def _on_x_scroll(self, first, last):
+        """Auto-hide/show horizontal scrollbar."""
+        first, last = float(first), float(last)
+        if first <= 0.0 and last >= 1.0:
+            self.scrollbar_x.grid_remove()
+        else:
+            self.scrollbar_x.grid()
+        self.scrollbar_x.set(first, last)
 
     def _clear_form(self) -> None:
         """Clear all form fields."""
@@ -604,10 +607,10 @@ class GradeApp(tk.Tk):
             total_str = f"{s.total():.1f}"
             avg_str = f"{avg:.1f}"
             
-            row = [s.student_id, s.name, total_str, avg_str, grade]
+            row = [s.student_id, s.name, "View", total_str, avg_str, grade]
             row.extend(str(int(s.marks_by_subject.get(subj, 0))) for subj in DEFAULT_SUBJECTS)
             
-            # Insert with grade-based color tag
+            # Insert with grade-based color tag only
             item = self.tree.insert("", tk.END, values=row, tags=(f"grade_{grade}",))
             
             # Apply tag-specific styling

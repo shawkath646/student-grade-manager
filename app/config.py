@@ -11,3 +11,4 @@ DB_CONFIG = {
 
 STUDENTS_TABLE = "students"
 MARKS_TABLE = "student_marks"
+PROFILES_TABLE = "student_profiles"

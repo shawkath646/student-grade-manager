@@ -1,3 +1,5 @@
+.gitignore
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -69,9 +71,6 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# pyenv
-.python-version
-
 # celery beat schedule file
 celerybeat-schedule
 
@@ -112,3 +111,20 @@ dmypy.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Project-specific
+data/students.json
+data/profiles/*.jpg
+data/profiles/*.png
+data/profiles/*.jpeg
+update_profiles_extended.py
+
+# Database credentials (if storing in .env)
+.env.local
+config.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*.pptx
