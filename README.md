@@ -378,27 +378,18 @@ python -m app.main
 - Develop comprehensive data management systems
 - Apply software engineering best practices
 
----
 
-## 🏢 Made By
+## 🏢 Powered By
 
 <div align="center">
 
 <img src="https://cloudburstlab.vercel.app/api/branding/logo?variant=transparent" alt="Cloudburst Lab" width="200" />
 
-### **Cloudburst Lab**
-
-*Innovating Digital Solutions*
-
-[Website](https://cloudburstlab.vercel.app) • [Projects](https://cloudburstlab.vercel.app/projects) • [Contact](https://cloudburstlab.vercel.app/contact)
-
----
+<br />
 
 **Cloudburst Lab** is a digital innovation studio focused on creating exceptional web and mobile applications. We specialize in modern JavaScript frameworks, cloud technologies, and user-centric design principles.
 
 </div>
-
----
 
 ## 📄 License
 
@@ -431,10 +422,6 @@ This project is developed for academic purposes as part of the **Application of 
 <div align="center">
 
 ### ⭐ Star this repository if you find it helpful
-
-**Built with ❤️ by [Maruf Shawkat Hossain](https://github.com/shawkath646) & Hasan Md Mahadi**
-
-**Powered by [Cloudburst Lab](https://cloudburstlab.vercel.app)**
 
 </div>
 

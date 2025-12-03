@@ -13,8 +13,10 @@ class StatisticsWindow(tk.Toplevel):
     def __init__(self, parent: tk.Tk, manager) -> None:
         super().__init__(parent)
         self.title("Class Statistics")
-        self.geometry("1000x800")
+        self.geometry("1400x900")
         self.configure(bg='#f0f0f0')
+        self.resizable(True, True)
+        self.minsize(1000, 700)
         
         stats = manager.statistics()
         
@@ -29,10 +31,6 @@ class StatisticsWindow(tk.Toplevel):
         
                        
         self._create_graphs(main_container, stats)
-        
-        btn_frame = ttk.Frame(self)
-        btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="✖️ Close", command=self.destroy).pack()
     
     def _create_graphs(self, parent: ttk.Frame, stats: Dict) -> None:
         """Create visualization graphs."""

@@ -47,12 +47,14 @@ class ProfileWindow(tk.Toplevel):
         
         container = ttk.Frame(scrollable_frame)
         container.pack(fill=tk.BOTH, expand=True)
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_columnconfigure(1, weight=1)
         
         left_column = ttk.Frame(container)
-        left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        left_column.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
         
         right_column = ttk.Frame(container)
-        right_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        right_column.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
         
         photo_frame = tk.Frame(left_column, bg='white', relief=tk.SOLID, bd=1)
         photo_frame.pack(pady=(0, 15))
@@ -112,13 +114,6 @@ class ProfileWindow(tk.Toplevel):
             ("Phone", profile_data.get('mother_phone', 'N/A')),
         ])
         mother_card.pack(fill=tk.X)
-        
-        btn_frame = ttk.Frame(scrollable_frame)
-        btn_frame.pack(pady=(20, 0))
-        ttk.Button(btn_frame, text="⛶ Fullscreen (F11)", command=self.toggle_fullscreen, 
-                  style='Action.TButton', width=20).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="✖️ Close", command=self.destroy, 
-                  style='Action.TButton', width=15).pack(side=tk.LEFT, padx=5)
     
     def toggle_fullscreen(self):
         self._is_fullscreen = not self._is_fullscreen

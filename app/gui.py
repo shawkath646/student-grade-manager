@@ -52,10 +52,14 @@ class GradeApp(tk.Tk):
 
         self.manager = StudentManager(load_students())
         self.profile_window = None
+        self.is_fullscreen = False
+        self.db_status = self._check_database_status()
         self._build_widgets()
         self._refresh_table()
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
         self._setup_table_tags()
+        self.bind('<F11>', self._toggle_fullscreen)
+        self.bind('<Escape>', self._exit_fullscreen)
 
     def _setup_table_tags(self) -> None:
         self.tree.tag_configure("grade_A", background="#d4edda", foreground="#155724")
@@ -63,6 +67,28 @@ class GradeApp(tk.Tk):
         self.tree.tag_configure("grade_C", background="#fff3cd", foreground="#856404")
         self.tree.tag_configure("grade_D", background="#f8d7da", foreground="#721c24")
         self.tree.tag_configure("grade_F", background="#f5c6cb", foreground="#721c24")
+
+    def _check_database_status(self) -> str:
+        """Check if using MySQL or JSON storage."""
+        try:
+            from .db import get_db_connection
+            with get_db_connection() as conn:
+                if conn and conn.is_connected():
+                    return "MySQL"
+        except Exception:
+            pass
+        return "JSON"
+    
+    def _toggle_fullscreen(self, event=None) -> None:
+        self.is_fullscreen = not self.is_fullscreen
+        self.attributes('-fullscreen', self.is_fullscreen)
+        return 'break'
+
+    def _exit_fullscreen(self, event=None) -> None:
+        if self.is_fullscreen:
+            self.is_fullscreen = False
+            self.attributes('-fullscreen', False)
+            return 'break'
 
     def _on_closing(self) -> None:
         try:
@@ -293,6 +319,11 @@ class GradeApp(tk.Tk):
         credit_label = tk.Label(stats_frame, text="Made by Maruf Shawkat Hossain and MD Mahadi Hasan", 
                                font=('Segoe UI', 9, 'italic'), bg='#ecf0f1', fg='#7f8c8d')
         credit_label.pack(side=tk.RIGHT, padx=15, pady=10)
+        
+        self.lbl_db_status = tk.Label(stats_frame, text=f"💾 Database: {self.db_status}", 
+                                      font=('Segoe UI', 9, 'bold'), bg='#ecf0f1', 
+                                      fg='#27ae60' if self.db_status == 'MySQL' else '#3498db')
+        self.lbl_db_status.pack(side=tk.RIGHT, padx=15, pady=10)
 
     def _focus_next(self) -> None:
         """Focus next field."""
@@ -694,7 +725,11 @@ class GradeApp(tk.Tk):
             total_str = f"{s.total():.1f}"
             avg_str = f"{avg:.1f}"
             
-            row = [s.student_id, s.name, "View", total_str, avg_str, grade]
+            from .db import get_profile
+            profile_exists = get_profile(s.student_id) is not None
+            profile_text = "🔍 View" if profile_exists else ""
+            
+            row = [s.student_id, s.name, profile_text, total_str, avg_str, grade]
             row.extend(str(int(s.marks_by_subject.get(subj, 0))) for subj in DEFAULT_SUBJECTS)
             
             item = self.tree.insert("", tk.END, values=row, tags=(f"grade_{grade}",))

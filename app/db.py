@@ -78,7 +78,7 @@ def init_database() -> None:
             )
         """)
         connection.commit()
-        print("Database initialized successfully!")
+        print("App running...")
     except Error as e:
         print(f"Error initializing database: {e}")
         raise
