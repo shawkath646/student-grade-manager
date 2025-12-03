@@ -51,7 +51,16 @@ def load_students(path: str = DEFAULT_DATA_PATH) -> List[Student]:
 def save_students(students: Iterable[Student], path: str = DEFAULT_DATA_PATH) -> None:
     if USE_DATABASE:
         try:
-            for student in students:
+            student_list = list(students)
+            existing_students = db.get_all_students()
+            existing_ids = {s['student_id'] for s in existing_students}
+            current_ids = {s.student_id for s in student_list}
+            
+            ids_to_delete = existing_ids - current_ids
+            for student_id in ids_to_delete:
+                db.delete_student(student_id)
+            
+            for student in student_list:
                 db.insert_student(student.student_id, student.name, student.marks_by_subject)
             return
         except Exception as e:

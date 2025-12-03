@@ -208,10 +208,15 @@ class GradeApp(tk.Tk):
         
         form = ttk.LabelFrame(self, text="  📝 Student Information  ", padding=15)
         form.pack(fill=tk.X, padx=15, pady=15)
+        
+        self.photo_container = ttk.Frame(form)
+        self.photo_container.grid(row=0, column=4, rowspan=6, padx=(20, 0), sticky="ne")
 
         self.var_id = tk.StringVar()
         self.var_name = tk.StringVar()
         self.subject_vars: Dict[str, tk.StringVar] = {subj: tk.StringVar() for subj in DEFAULT_SUBJECTS}
+        self.profile_photo_label = None
+        self.current_profile_photo = None
 
         ttk.Label(form, text="Student ID:", font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, padx=8, pady=8, sticky=tk.W)
         entry_id = ttk.Entry(form, textvariable=self.var_id, width=22, font=('Segoe UI', 10))
@@ -281,6 +286,8 @@ class GradeApp(tk.Tk):
                 self.tree.column(col, width=100, anchor=tk.CENTER)
             elif col == "Name":
                 self.tree.column(col, width=180)
+            elif col in DEFAULT_SUBJECTS or col in ["Total", "Average", "Grade"]:
+                self.tree.column(col, width=100, anchor=tk.CENTER)
             else:
                 self.tree.column(col, width=100)
         
@@ -652,6 +659,37 @@ class GradeApp(tk.Tk):
         self.var_name.set(student.name)
         for subj in DEFAULT_SUBJECTS:
             self.subject_vars[subj].set(str(student.marks_by_subject.get(subj, 0)))
+        self._update_profile_photo(sid)
+    
+    def _update_profile_photo(self, student_id: str) -> None:
+        """Update the profile photo display."""
+        from .db import get_profile
+        profile_data = get_profile(student_id)
+        
+        if profile_data and profile_data.get('photo_path'):
+            photo_path = profile_data.get('photo_path')
+            if os.path.exists(photo_path):
+                try:
+                    img = Image.open(photo_path)
+                    img = img.resize((100, 100), Image.Resampling.LANCZOS)
+                    self.current_profile_photo = ImageTk.PhotoImage(img)
+                    
+                    if not self.profile_photo_label:
+                        photo_frame = tk.Frame(self.photo_container, bg='white', relief=tk.SOLID, bd=1)
+                        photo_frame.pack(pady=5)
+                        
+                        self.profile_photo_label = tk.Label(photo_frame, bg='white')
+                        self.profile_photo_label.pack(padx=5, pady=5)
+                    
+                    self.profile_photo_label.config(image=self.current_profile_photo)
+                    return
+                except Exception:
+                    pass
+        
+        if self.profile_photo_label:
+            self.profile_photo_label.master.pack_forget()
+            self.profile_photo_label = None
+        self.current_profile_photo = None
     
     def _on_tree_click(self, event) -> None:
         """Handle click on tree to show profile."""
@@ -696,6 +734,10 @@ class GradeApp(tk.Tk):
         self.var_name.set("")
         for var in self.subject_vars.values():
             var.set("")
+        if self.profile_photo_label:
+            self.profile_photo_label.master.pack_forget()
+            self.profile_photo_label = None
+        self.current_profile_photo = None
 
     def _refresh_table(self) -> None:
         """Refresh table with current data."""
@@ -727,7 +769,7 @@ class GradeApp(tk.Tk):
             
             from .db import get_profile
             profile_exists = get_profile(s.student_id) is not None
-            profile_text = "🔍 View" if profile_exists else ""
+            profile_text = "View" if profile_exists else ""
             
             row = [s.student_id, s.name, profile_text, total_str, avg_str, grade]
             row.extend(str(int(s.marks_by_subject.get(subj, 0))) for subj in DEFAULT_SUBJECTS)
