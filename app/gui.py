@@ -95,24 +95,24 @@ class GradeApp(tk.Tk):
         header.pack(fill=tk.X, padx=0, pady=0)
         
         self.logo_photo = None
-        # Logo is in the root assets folder, not app/assets
+                                                           
         logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'sejong_logo.png')
 
         if os.path.exists(logo_path):
             try:
                 logo_img = Image.open(logo_path)
-                # Make the logo bigger so it stands out more
+                                                            
                 logo_img.thumbnail((150, 300), Image.Resampling.LANCZOS)
 
-                # Create a light rounded card background
+                                                        
                 padding = 4
                 card_width = logo_img.width + padding * 2
                 card_height = logo_img.height + padding * 2
 
-                # Base card color
+                                 
                 card_bg = Image.new("RGBA", (card_width, card_height), (0, 0, 0, 0))
 
-                # Draw rounded rectangle mask
+                                             
                 from PIL import ImageDraw
                 radius = 8
                 mask = Image.new("L", (card_width, card_height), 0)
@@ -123,7 +123,7 @@ class GradeApp(tk.Tk):
                     fill=255,
                 )
 
-                # Light card color
+                                  
                 card_color = (245, 247, 250, 210)
                 card_color_img = Image.new("RGBA", (card_width, card_height), card_color)
                 card_bg = Image.composite(card_color_img, card_bg, mask)
@@ -133,7 +133,7 @@ class GradeApp(tk.Tk):
 
                 self.logo_photo = ImageTk.PhotoImage(card_bg)
 
-                # Container that blends into header; no border, rounded effect comes from image
+                                                                                               
                 logo_container = tk.Frame(
                     header,
                     bg="#2c3e50",
@@ -320,7 +320,7 @@ class GradeApp(tk.Tk):
                 else:
                     marks[subj] = 0.0
             
-            # Validate all marks
+                                
             validate_marks(marks.values())
             
             return Student(student_id=sid, name=name, marks_by_subject=marks)
@@ -363,7 +363,7 @@ class GradeApp(tk.Tk):
         if self.manager.delete(sid):
             self._refresh_table()
             self._clear_form()
-            # Auto-save
+                       
             try:
                 save_students(self.manager.list_students())
             except Exception:
@@ -414,7 +414,7 @@ class GradeApp(tk.Tk):
             if not filename:
                 return
             
-            # Validate file format
+                                  
             with open(filename, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
@@ -429,19 +429,19 @@ class GradeApp(tk.Tk):
             for idx, item in enumerate(data, 1):
                 try:
                     student = Student.from_dict(item)
-                    # Validate student data
+                                           
                     validate_student_id(student.student_id)
                     validate_student_name(student.name)
                     validate_marks(student.marks_by_subject.values())
                     
-                    # Check if student with same ID exists
+                                                          
                     existing = self.manager.get(student.student_id)
                     if existing:
-                        # Update existing
+                                         
                         self.manager.add_or_update(student)
                         imported_count += 1
                     else:
-                        # Add new
+                                 
                         self.manager.add_or_update(student)
                         imported_count += 1
                         
@@ -487,7 +487,7 @@ class GradeApp(tk.Tk):
             with open(filename, 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 
-                # Validate header
+                                 
                 expected_cols = ["ID", "Name"] + list(DEFAULT_SUBJECTS)
                 if not all(col in reader.fieldnames for col in expected_cols):
                     missing = [col for col in expected_cols if col not in (reader.fieldnames or [])]
@@ -496,14 +496,14 @@ class GradeApp(tk.Tk):
                 
                 for idx, row in enumerate(reader, 1):
                     try:
-                        # Extract ID and Name
+                                             
                         sid = row.get("ID", "").strip()
                         name = row.get("Name", "").strip()
                         
                         validate_student_id(sid)
                         validate_student_name(name)
                         
-                        # Extract marks
+                                       
                         marks = {}
                         for subj in DEFAULT_SUBJECTS:
                             mark_str = row.get(subj, "0").strip()
@@ -550,9 +550,9 @@ class GradeApp(tk.Tk):
             
             with open(filename, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
-                # Write header
+                              
                 writer.writerow(["ID", "Name", "Total", "Average", "Grade"] + list(DEFAULT_SUBJECTS))
-                # Write data
+                            
                 for student in self.manager.list_students():
                     avg = student.average()
                     grade = compute_grade(avg, DEFAULT_GRADE_SCALE)
@@ -634,7 +634,7 @@ class GradeApp(tk.Tk):
         if not item:
             return
         
-        # Column #3 is the Profile column (ID=0, Name=1, Profile=2)
+                                                                   
         if column == "#3":
             values = self.tree.item(item, "values")
             if values:
@@ -676,7 +676,7 @@ class GradeApp(tk.Tk):
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        # Sort students
+                       
         sort_by = self.var_sort.get()
         if sort_by == "Name":
             students.sort(key=lambda s: s.name)

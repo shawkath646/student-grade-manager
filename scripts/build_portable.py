@@ -29,7 +29,7 @@ def clean_build_folders():
             shutil.rmtree(folder)
             print(f"✓ Removed {folder}/")
     
-    # Remove .spec files except our custom one
+                                              
     for spec_file in Path('.').glob('*.spec'):
         if spec_file.name != 'build_exe.spec':
             spec_file.unlink()
@@ -39,7 +39,7 @@ def build_executable():
     print("\nBuilding portable executable...")
     print("This may take several minutes...\n")
     
-    # Run PyInstaller with the spec file
+                                        
     result = subprocess.run(
         [sys.executable, "-m", "PyInstaller", "--clean", "scripts/build_exe.spec"],
         capture_output=True,
@@ -62,13 +62,13 @@ def create_portable_package():
     portable_dir = Path("dist/StudentGradeManager_Portable")
     portable_dir.mkdir(parents=True, exist_ok=True)
     
-    # Copy the executable
+                         
     exe_path = Path("dist/StudentGradeManager.exe")
     if exe_path.exists():
         shutil.copy2(exe_path, portable_dir / "StudentGradeManager.exe")
         print("✓ Copied executable")
     
-    # Copy data folder if it doesn't exist in the exe
+                                                     
     data_src = Path("data")
     if data_src.exists():
         data_dst = portable_dir / "data"
@@ -77,7 +77,7 @@ def create_portable_package():
         shutil.copytree(data_src, data_dst)
         print("✓ Copied data folder")
     
-    # Copy assets folder if it exists
+                                     
     assets_src = Path("assets")
     if assets_src.exists():
         assets_dst = portable_dir / "assets"
@@ -86,7 +86,7 @@ def create_portable_package():
         shutil.copytree(assets_src, assets_dst)
         print("✓ Copied assets folder")
     
-    # Create README for portable version
+                                        
     readme_content = """# Student Grade Manager - Portable Version
 
 ## How to Use
@@ -120,7 +120,7 @@ For more information, visit: https://github.com/shawkath646/student-grade-manage
         f.write(readme_content)
     print("✓ Created README.txt")
     
-    # Copy LICENSE if it exists
+                               
     if Path("LICENSE").exists():
         shutil.copy2("LICENSE", portable_dir / "LICENSE.txt")
         print("✓ Copied LICENSE")
@@ -134,18 +134,18 @@ def main():
     print("Student Grade Manager - Portable Executable Builder")
     print("=" * 60)
     
-    # Step 1: Install PyInstaller
+                                 
     install_pyinstaller()
     
-    # Step 2: Clean previous builds
+                                   
     clean_build_folders()
     
-    # Step 3: Build executable
+                              
     if not build_executable():
         print("\nBuild process failed. Please check the errors above.")
         sys.exit(1)
     
-    # Step 4: Create portable package
+                                     
     portable_dir = create_portable_package()
     
     print("\n" + "=" * 60)

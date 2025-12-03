@@ -23,11 +23,11 @@ class StatisticsWindow(tk.Toplevel):
         tk.Label(header, text="📊 Class Statistics", font=('Segoe UI', 16, 'bold'), 
                 bg='#2c3e50', fg='white', pady=12).pack()
         
-        # Main container for graphs
+                                   
         main_container = ttk.Frame(self)
         main_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
         
-        # Create graphs
+                       
         self._create_graphs(main_container, stats)
         
         btn_frame = ttk.Frame(self)
@@ -36,10 +36,10 @@ class StatisticsWindow(tk.Toplevel):
     
     def _create_graphs(self, parent: ttk.Frame, stats: Dict) -> None:
         """Create visualization graphs."""
-        # Create figure with subplots
+                                     
         fig = Figure(figsize=(10, 9), facecolor='#f0f0f0')
         
-        # 1. Grade Distribution (Pie Chart) - Larger size
+                                                         
         ax1 = fig.add_subplot(2, 2, (1, 2))
         grade_counts = stats.get('students_by_grade', {})
         if grade_counts:
@@ -48,18 +48,18 @@ class StatisticsWindow(tk.Toplevel):
             colors = ['#27ae60', '#3498db', '#f39c12', '#e67e22', '#e74c3c']
             wedges, texts, autotexts = ax1.pie(counts, labels=grades, autopct='%1.1f%%', 
                                                 startangle=90, colors=colors, textprops={'fontsize': 13})
-            # Make percentage text bold and larger
+                                                  
             for autotext in autotexts:
                 autotext.set_color('white')
                 autotext.set_fontsize(12)
                 autotext.set_fontweight('bold')
-            # Make labels larger
+                                
             for text in texts:
                 text.set_fontsize(14)
                 text.set_fontweight('bold')
             ax1.set_title('Grade Distribution', fontsize=14, fontweight='bold', pad=15)
         
-        # 2. Subject Averages (Bar Chart)
+                                         
         ax2 = fig.add_subplot(2, 2, 3)
         subject_avgs = stats.get('subject_averages', {})
         if subject_avgs:
@@ -71,13 +71,13 @@ class StatisticsWindow(tk.Toplevel):
             ax2.set_xlim(0, 100)
             ax2.tick_params(axis='both', labelsize=10)
             
-            # Add value labels on bars
+                                      
             for i, bar in enumerate(bars):
                 width = bar.get_width()
                 ax2.text(width + 1, bar.get_y() + bar.get_height()/2, 
                         f'{averages[i]:.1f}%', va='center', fontsize=10, fontweight='bold')
         
-        # 3. Top vs Bottom Performers (Horizontal Bar Chart)
+                                                            
         ax3 = fig.add_subplot(2, 2, 4)
         top_performers = stats.get('top_performers', [])
         bottom_performers = stats.get('bottom_performers', [])
@@ -87,13 +87,13 @@ class StatisticsWindow(tk.Toplevel):
             scores = []
             colors_perf = []
             
-            # Add top performers
+                                
             for name, avg in top_performers[:5]:
                 performers.append(f"{name} (Top)")
                 scores.append(avg)
                 colors_perf.append('#27ae60')
             
-            # Add bottom performers
+                                   
             for name, avg in bottom_performers[:5]:
                 performers.append(f"{name} (Low)")
                 scores.append(avg)
@@ -109,7 +109,7 @@ class StatisticsWindow(tk.Toplevel):
                 ax3.set_xlim(0, 100)
                 ax3.tick_params(axis='y', labelsize=9)
                 
-                # Add value labels
+                                  
                 for i, bar in enumerate(bars):
                     width = bar.get_width()
                     ax3.text(width + 1, bar.get_y() + bar.get_height()/2, 
@@ -117,7 +117,7 @@ class StatisticsWindow(tk.Toplevel):
         
         fig.tight_layout(pad=2.5)
         
-        # Embed the figure in tkinter
+                                     
         canvas = FigureCanvasTkAgg(fig, master=parent)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
