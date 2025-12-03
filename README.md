@@ -136,7 +136,7 @@ A comprehensive **Student Grade Management System** built with Python and Tkinte
 
 ```
 student-grade-manager/
-├── 📂 app/
+├── 📂 app/                      # Main application package
 │   ├── __init__.py              # Constants (subjects, grade scale)
 │   ├── grading.py               # Validation and grading functions
 │   ├── manager.py               # Business logic and statistics
@@ -144,22 +144,33 @@ student-grade-manager/
 │   ├── storage.py               # JSON file operations (legacy)
 │   ├── db.py                    # MySQL database operations
 │   ├── gui.py                   # Main GUI application
-│   ├── main.py                  # Entry point
+│   ├── main.py                  # Application entry point
 │   │
 │   └── 📂 windows/              # Modular window components
 │       ├── __init__.py          # Package exports
 │       ├── profile_window.py   # Student profile viewer
 │       └── statistics_window.py # Statistics dashboard
 │
-├── 📂 data/
-│   ├── students.json            # Data file (auto-created)
-│   ├── students.sample.json     # Sample JSON import
-│   ├── students.sample.csv      # Sample CSV import
+├── 📂 scripts/                  # Build and utility scripts
+│   ├── build_portable.py        # Portable EXE builder
+│   ├── build_exe.spec           # PyInstaller specification
+│   ├── run_app.py               # Executable entry point
+│   └── README.md                # Build scripts documentation
+│
+├── 📂 data/                     # Application data (auto-created)
+│   ├── students.json            # Student records (JSON format)
 │   └── 📂 profiles/             # Student profile images
 │
-├── 📄 README.md                 # This file
+├── 📂 assets/                   # Static assets (optional)
+│
+├── 📄 README.md                 # Project documentation
+├── 📄 CHANGELOG.md              # Version history
+├── 📄 CONTRIBUTING.md           # Contribution guidelines
+├── 📄 LICENSE                   # MIT License
+├── 📄 requirements.txt          # Python dependencies
+├── 📄 setup.py                  # Package configuration
 ├── 📄 launch.bat                # Windows launcher script
-└── 📄 update_profiles_extended.py # Profile data generator
+└── 📄 run.py                    # Quick launcher script
 ```
 
 ---
@@ -197,15 +208,25 @@ python -c "from app.db import init_database; init_database()"
 
 ### Running the Application
 
+**Option 1: Portable Executable (Recommended for end users)**
 ```bash
-# Method 1: Using Python module
-python -m app.main
+# Build the portable executable
+python scripts/build_portable.py
 
-# Method 2: Using launcher script (Windows)
+# Run the executable (no Python installation required)
+dist/StudentGradeManager_Portable/StudentGradeManager.exe
+```
+
+**Option 2: Development Mode**
+```bash
+# Method 1: Using launcher script
+python run.py
+
+# Method 2: Using batch file (Windows)
 launch.bat
 
-# Method 3: Direct execution
-python app/main.py
+# Method 3: Using Python module
+python -m app.main
 ```
 
 ---

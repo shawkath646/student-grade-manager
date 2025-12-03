@@ -28,7 +28,8 @@ wheels/
 
 # PyInstaller
 *.manifest
-*.spec
+# Keep our custom build spec file
+# *.spec - commented to keep build_exe.spec
 
 # Installer logs
 pip-log.txt

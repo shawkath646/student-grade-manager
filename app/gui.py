@@ -7,6 +7,8 @@ import csv
 import json
 import sys
 import ctypes
+import os
+from PIL import Image, ImageTk
 
 from . import DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS
 from .grading import compute_grade, validate_marks, validate_student_id, validate_student_name, validate_float_input
@@ -43,7 +45,7 @@ class GradeApp(tk.Tk):
         style.configure('TEntry', fieldbackground='white', font=('Segoe UI', 10))
         style.configure('Treeview', font=('Segoe UI', 9), rowheight=25)
         style.configure('Treeview.Heading', font=('Segoe UI', 10, 'bold'), background='#34495e', foreground='white')
-        style.map('Treeview.Heading', background=[('active', '#2c3e50')])
+        style.map('Treeview.Heading', background=[('active', "#326fab")])
         
         style.configure('Action.TButton', font=('Segoe UI', 9, 'bold'), padding=8)
         style.map('Action.TButton', background=[('active', '#3498db')], foreground=[('active', 'white')])
@@ -91,9 +93,92 @@ class GradeApp(tk.Tk):
         
         header = tk.Frame(self, bg='#2c3e50', height=60)
         header.pack(fill=tk.X, padx=0, pady=0)
+        
+        self.logo_photo = None
+        # Logo is in the root assets folder, not app/assets
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'sejong_logo.png')
+
+        if os.path.exists(logo_path):
+            try:
+                logo_img = Image.open(logo_path)
+                # Make the logo bigger so it stands out more
+                logo_img.thumbnail((150, 300), Image.Resampling.LANCZOS)
+
+                # Create a light rounded card background
+                padding = 4
+                card_width = logo_img.width + padding * 2
+                card_height = logo_img.height + padding * 2
+
+                # Base card color
+                card_bg = Image.new("RGBA", (card_width, card_height), (0, 0, 0, 0))
+
+                # Draw rounded rectangle mask
+                from PIL import ImageDraw
+                radius = 8
+                mask = Image.new("L", (card_width, card_height), 0)
+                draw = ImageDraw.Draw(mask)
+                draw.rounded_rectangle(
+                    [(0, 0), (card_width, card_height)],
+                    radius=radius,
+                    fill=255,
+                )
+
+                # Light card color
+                card_color = (245, 247, 250, 210)
+                card_color_img = Image.new("RGBA", (card_width, card_height), card_color)
+                card_bg = Image.composite(card_color_img, card_bg, mask)
+
+                offset = ((card_width - logo_img.width) // 2, (card_height - logo_img.height) // 2)
+                card_bg.paste(logo_img, offset, logo_img if logo_img.mode == 'RGBA' else None)
+
+                self.logo_photo = ImageTk.PhotoImage(card_bg)
+
+                # Container that blends into header; no border, rounded effect comes from image
+                logo_container = tk.Frame(
+                    header,
+                    bg="#2c3e50",
+                    highlightthickness=0,
+                )
+                logo_container.pack(side=tk.RIGHT, padx=24, pady=6)
+
+                logo_label = tk.Label(
+                    logo_container,
+                    image=self.logo_photo,
+                    bg="#2c3e50",
+                    bd=0,
+                    relief=tk.FLAT,
+                )
+                logo_label.pack()
+            except Exception:
+                logo_label = tk.Label(
+                    header,
+                    text="SEJONG",
+                    font=('Segoe UI', 10, 'bold'),
+                    bg='#2c3e50',
+                    fg='white',
+                    padx=10,
+                    pady=5,
+                    relief=tk.RAISED,
+                    borderwidth=2,
+                )
+                logo_label.pack(side=tk.RIGHT, padx=20, pady=5)
+        else:
+            logo_label = tk.Label(
+                header,
+                text="SEJONG",
+                font=('Segoe UI', 10, 'bold'),
+                bg='#2c3e50',
+                fg='white',
+                padx=10,
+                pady=5,
+                relief=tk.RAISED,
+                borderwidth=2,
+            )
+            logo_label.pack(side=tk.RIGHT, padx=20, pady=5)
+        
         title_label = tk.Label(header, text="🎓 Student Grade Management", font=('Segoe UI', 18, 'bold'), 
                                bg='#2c3e50', fg='white', pady=15)
-        title_label.pack()
+        title_label.pack(side=tk.LEFT, padx=20)
         
         form = ttk.LabelFrame(self, text="  📝 Student Information  ", padding=15)
         form.pack(fill=tk.X, padx=15, pady=15)
@@ -204,6 +289,10 @@ class GradeApp(tk.Tk):
         self.lbl_top = tk.Label(stats_frame, text="🏆 Top Performers: -", 
                                font=("Segoe UI", 10), bg='#ecf0f1', fg='#34495e')
         self.lbl_top.pack(side=tk.LEFT, padx=15, pady=10)
+        
+        credit_label = tk.Label(stats_frame, text="Made by Maruf Shawkat Hossain and MD Mahadi Hasan", 
+                               font=('Segoe UI', 9, 'italic'), bg='#ecf0f1', fg='#7f8c8d')
+        credit_label.pack(side=tk.RIGHT, padx=15, pady=10)
 
     def _focus_next(self) -> None:
         """Focus next field."""
@@ -524,7 +613,6 @@ class GradeApp(tk.Tk):
         values = self.tree.item(sel[0], "values")
         if not values:
             return
-        # values: ID, Name, Profile, Total, Average, Grade, subjects...
         sid = values[0]
         student = self.manager.get(sid)
         if not student:
@@ -603,17 +691,14 @@ class GradeApp(tk.Tk):
             avg = s.average()
             grade = compute_grade(avg, DEFAULT_GRADE_SCALE)
             
-            # Format values with better precision
             total_str = f"{s.total():.1f}"
             avg_str = f"{avg:.1f}"
             
             row = [s.student_id, s.name, "View", total_str, avg_str, grade]
             row.extend(str(int(s.marks_by_subject.get(subj, 0))) for subj in DEFAULT_SUBJECTS)
             
-            # Insert with grade-based color tag only
             item = self.tree.insert("", tk.END, values=row, tags=(f"grade_{grade}",))
             
-            # Apply tag-specific styling
             self.tree.set(item, "Grade", grade)
 
     def _update_stats(self) -> None:
